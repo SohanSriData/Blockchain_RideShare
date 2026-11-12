@@ -2,7 +2,12 @@ import { createServer, type Server } from "node:http";
 import type { ReadModel } from "./model.js";
 
 /** Small read-only JSON API over the read model. GET only. */
-export function createApi(model: ReadModel, now: () => number = () => Math.floor(Date.now() / 1000)): Server {
+export function createApi(
+  model: ReadModel,
+  // Chain time, not wall time: Anvil's clock can run ahead of or behind the wall clock, and the contract decides
+  // "voting ended" by block timestamp.
+  now: () => number = () => model.chainTime() ?? Math.floor(Date.now() / 1000),
+): Server {
   return createServer((req, res) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Content-Type", "application/json");

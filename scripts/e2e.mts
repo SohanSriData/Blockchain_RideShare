@@ -11,6 +11,7 @@ import { mnemonicToAccount } from "viem/accounts";
 import { anvil } from "viem/chains";
 import { ReadModel } from "../indexer/src/model.ts";
 import { Syncer, viemSource } from "../indexer/src/sync.ts";
+import { createApi } from "../indexer/src/server.ts";
 
 const PORT = 8549;
 const RPC = `http://127.0.0.1:${PORT}`;
@@ -95,7 +96,14 @@ async function runFlow(label: string, model: ReadModel) {
     const rep = model.reputation(driver.address).driver;
     assertEq(`${step}: driver rating sum`, rep.sum, sum);
     assertEq(`${step}: driver rating count`, rep.count, count);
-    assertEq(`${step}: treasury`, model.treasury().balance, await publicClient.getBalance({ address: d.governance }));
+    const govBalance = await publicClient.getBalance({ address: d.governance });
+    assertEq(`${step}: treasury`, model.treasury().balance, govBalance);
+    // What the web app actually reads: the indexer's HTTP API (story 88), not just the in-process model.
+    const api = async <T,>(path: string) => (await (await fetch(`${apiBase}${path}`)).json()) as T;
+    assertEq(`${step}: API treasury`, (await api<{ balance: string }>("/treasury")).balance, govBalance);
+    assertEq(`${step}: API open rides`, (await api<unknown[]>("/rides/open")).length, model.openRides().length);
+    const apiRep = await api<{ driver: { sum: number; count: number } }>(`/reputation/${driver.address}`);
+    assertEq(`${step}: API driver rating count`, apiRep.driver.count, count);
     const [, executed, , , , , , forVotes, againstVotes] = await read<readonly [number, boolean, Address, bigint, bigint, bigint, bigint, bigint, bigint]>(d.governance, "proposals", [1n]);
     const p = model.proposals(Number.MAX_SAFE_INTEGER)[0];
     if (p) {
@@ -143,6 +151,9 @@ async function runFlow(label: string, model: ReadModel) {
 
 // One read model across both runs: the second run starts on a brand-new chain, so the indexer must reset itself.
 const model = new ReadModel(":memory:");
+const apiServer = createApi(model);
+await new Promise<void>((ok) => apiServer.listen(0, "127.0.0.1", ok));
+const apiBase = `http://127.0.0.1:${(apiServer.address() as { port: number }).port}`;
 let chain = startChain();
 try {
   await waitForAnvil();

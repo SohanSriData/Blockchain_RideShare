@@ -9,7 +9,7 @@ import { RateControl } from "@/components/RateControl";
 import { RepBadge } from "@/components/RepBadge";
 import { addresses, governanceAbi, rideAbi } from "@/lib/contracts";
 import { eth, sameAddress, short } from "@/lib/format";
-import { suggestFare, toMicroDegrees, type LatLng } from "@/lib/geo";
+import { haversineKm, suggestFare, toMicroDegrees, type LatLng } from "@/lib/geo";
 import { useIndexer, type RideView } from "@/lib/indexer";
 
 const MapView = dynamic(() => import("@/components/MapView"), { ssr: false });
@@ -38,9 +38,13 @@ export default function RiderPage() {
     if (!pickup || !drop) return;
     let cancelled = false;
     fetch(`/api/route?fromLat=${pickup.lat}&fromLng=${pickup.lng}&toLat=${drop.lat}&toLng=${drop.lng}`)
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error(`route ${r.status}`);
+        return r.json();
+      })
       .then((d) => !cancelled && setRoute(d))
-      .catch(() => !cancelled && setRoute(undefined));
+      // Even if our own route handler is down the rider can still request: fall back to straight-line distance.
+      .catch(() => !cancelled && setRoute({ distanceKm: haversineKm(pickup, drop), source: "straight-line" }));
     return () => {
       cancelled = true;
     };

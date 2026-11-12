@@ -204,7 +204,8 @@ contract RideServicesTest is Fixture {
         uint256 dBefore = driver.balance;
         _complete(id);
         uint256 fee = g.treasuryBalance();
-        assertEq(fee, fare * 5 / 100);
+        assertEq(fee, 0.005 ether); // 5% of 0.1 ether + 7 wei is 0.005 ether + 0.35 wei, rounded down
+        assertEq(driver.balance - dBefore, 0.095 ether + 7); // the remainder goes to the driver
         assertEq(driver.balance - dBefore + fee, fare); // nothing lost or created
     }
 
@@ -351,7 +352,11 @@ contract RideServicesTest is Fixture {
         _complete(id);
         assertEq(rider.balance + driver.balance + address(g).balance + address(r).balance, totalBefore);
         assertEq(address(r).balance, 0);
-        assertEq(g.treasuryBalance(), uint256(fare) * feePct / 100);
+        // The fee is the largest whole amount not exceeding feePct% of the fare (round down), stated as bounds
+        // rather than by recomputing the contract's own formula.
+        uint256 fee = g.treasuryBalance();
+        assertLe(fee * 100, uint256(fare) * feePct);
+        assertGt((fee + 1) * 100, uint256(fare) * feePct);
     }
 }
 

@@ -105,9 +105,16 @@ export class ReadModel {
     return this.getMeta("lastBlockHash");
   }
 
-  setCheckpoint(block: bigint, hash: string) {
+  setCheckpoint(block: bigint, hash: string, timestamp?: bigint) {
     this.setMeta("lastBlock", block.toString());
     this.setMeta("lastBlockHash", hash);
+    if (timestamp !== undefined) this.setMeta("chainTime", timestamp.toString());
+  }
+
+  /** Timestamp (unix seconds) of the latest indexed block: the chain's clock, which can differ from the wall clock. */
+  chainTime(): number | undefined {
+    const t = this.getMeta("chainTime");
+    return t === undefined ? undefined : Number(t);
   }
 
   /** Apply events in chain order. Events at or below the stored cursor are ignored, so replays are safe. */

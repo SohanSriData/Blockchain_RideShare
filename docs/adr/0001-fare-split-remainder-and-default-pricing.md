@@ -13,6 +13,9 @@ The spec left two judgement calls open: which side receives the rounding remaind
 - **Defaults** (local deploy, overridable by env): per-km rate 0.0005 ETH, minimum fare 0.001 ETH, claim timeout 2 minutes locally. A 20 km ride is 0.01 ETH, small enough for faucet funds. The stake default is 0.01 ETH.
 - The claim timeout is **snapshotted at acceptance** (`claimableAt`), so a later vote cannot move the goalposts for a ride already in progress.
 
+- **Timings by network**: chain 31337 defaults to 1 minute voting and a 2 minute claim timeout; any other chain (e.g. Sepolia) defaults to 1 day and 30 minutes, as the spec says. Env vars override both.
+- **No bounds on the governed pricing parameters** beyond the fee cap, matching the spec (only the fee is capped). A passed proposal can set the minimum fare to 0 or the claim timeout to 0 (an instant driver claim, leaving the rider one block to cancel). Members own this risk by design; the web app shows the current values on the Governance page.
+
 ## Consequences
 
 - Drivers can predict earnings exactly: fare minus the floor of the fee.

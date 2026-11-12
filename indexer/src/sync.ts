@@ -6,6 +6,7 @@ import type { ReadModel } from "./model.js";
 export interface ChainSource {
   head(): Promise<bigint>;
   blockHash(n: bigint): Promise<string | null>;
+  blockTimestamp(n: bigint): Promise<bigint | null>;
   logs(from: bigint, to: bigint): Promise<IndexedEvent[]>;
 }
 
@@ -36,7 +37,8 @@ export class Syncer {
     }
     if (head > last || last === -1n) {
       const hash = await this.source.blockHash(head);
-      if (hash) this.model.setCheckpoint(head, hash);
+      const time = await this.source.blockTimestamp(head);
+      if (hash) this.model.setCheckpoint(head, hash, time ?? undefined);
     }
   }
 }
@@ -49,6 +51,7 @@ export function viemSource(rpcUrl: string, addresses: Address[]): ChainSource {
     // and (if lower than the last indexed block) be mistaken for a restarted chain.
     head: () => client.getBlockNumber({ cacheTime: 0 }),
     blockHash: async (n) => (await client.getBlock({ blockNumber: n }).catch(() => null))?.hash ?? null,
+    blockTimestamp: async (n) => (await client.getBlock({ blockNumber: n }).catch(() => null))?.timestamp ?? null,
     logs: async (from, to) => {
       const logs = await client.getLogs({ address: addresses, fromBlock: from, toBlock: to });
       const out: IndexedEvent[] = [];

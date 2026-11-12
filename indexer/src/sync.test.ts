@@ -15,6 +15,8 @@ class FakeChain implements ChainSource {
     this.blocks.push(events.map((e, i) => ({ ...e, blockNumber: n, logIndex: i })));
   }
   async head() { return BigInt(this.blocks.length - 1); }
+  /** Fake chain time: 10 s per block. */
+  async blockTimestamp(n: bigint) { return this.blocks[Number(n)] ? n * 10n : null; }
   async blockHash(n: bigint) {
     const b = this.blocks[Number(n)];
     return b ? `${this.salt}:${n}:${JSON.stringify(b, (_, v) => (typeof v === "bigint" ? v.toString() : v))}` : null;
@@ -35,6 +37,24 @@ test("sync catches up to head and then picks up new blocks incrementally", async
   await s.sync();
   assert.deepEqual(model.openRides().map((r) => r.id), ["1", "2", "3"]);
   assert.equal(model.lastBlock(), 2n);
+});
+
+test("the model tracks chain time from the latest block, so proposal status follows the chain, not the wall clock", async () => {
+  const chain = new FakeChain("x");
+  chain.mine({
+    name: "ProposalCreated",
+    args: { id: 1n, proposer: A, kind: 0, value: 8n, recipient: "0x0000000000000000000000000000000000000000", endTime: 25n, quorum: 1n },
+  });
+  chain.mine({ name: "VoteCast", args: { id: 1n, voter: A, support: true } });
+  const model = new ReadModel(":memory:");
+  const s = new Syncer(model, chain);
+  await s.sync();
+  assert.equal(model.chainTime(), 20); // block 2
+  assert.equal(model.proposals(model.chainTime()!)[0].status, "open"); // 20 < endTime 25
+  chain.mine(); // block 3 => chain time 30, past the deadline
+  await s.sync();
+  assert.equal(model.chainTime(), 30);
+  assert.equal(model.proposals(model.chainTime()!)[0].status, "passed");
 });
 
 test("a restart on the same chain resumes without duplicating events", async () => {

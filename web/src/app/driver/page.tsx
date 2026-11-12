@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useConnection, useReadContract } from "wagmi";
 import { TxButton } from "@/components/TxButton";
 import { RateControl } from "@/components/RateControl";
@@ -136,13 +136,19 @@ function ClaimButton({ id, onDone }: { id: string; onDone: () => void }) {
     args: [BigInt(id)],
     query: { refetchInterval: 5000 },
   });
-  const [now] = useState(() => Math.floor(Date.now() / 1000));
+  const [now, setNow] = useState(() => Math.floor(Date.now() / 1000));
+  useEffect(() => {
+    const t = setInterval(() => setNow(Math.floor(Date.now() / 1000)), 1000);
+    return () => clearInterval(t);
+  }, []);
   const claimableAt = ride.data ? Number(ride.data[4]) : undefined;
   const wait = claimableAt !== undefined ? claimableAt - now : undefined;
   return (
     <span className="row">
       <TxButton
         label="Claim fare"
+        // Not disabled from the wall clock: chain time can differ (Anvil), and the contract enforces the timeout
+        // with a readable ClaimTooEarly error.
         request={{ address: addresses.rideServices, abi: rideAbi, functionName: "claimFare", args: [BigInt(id)] }}
         onDone={onDone}
       />
