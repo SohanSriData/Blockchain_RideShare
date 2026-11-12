@@ -10,6 +10,11 @@
     "chain": "anvil --chain-id 31337 --block-time 1",
     "test:contracts": "cd contracts && forge test",
     "build:contracts": "cd contracts && forge build",
+    "deploy:local": "cd contracts && forge script script/Deploy.s.sol --rpc-url http://127.0.0.1:8545 --broadcast --start-fresh --unlocked --sender 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 && cd .. && node scripts/sync-deployment.mjs",
+    "sync:deployment": "node scripts/sync-deployment.mjs",
+    "test:indexer": "npm run test -w indexer",
+    "test:web": "npm run test -w web",
+    "test": "npm run test:contracts && npm run test:indexer && npm run test:web",
     "dev:web": "npm run dev -w web",
     "dev:indexer": "npm run dev -w indexer",
     "typecheck": "npm run typecheck -w indexer && npm run build -w web"

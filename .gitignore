@@ -7,3 +7,7 @@ cache/
 broadcast/
 *.sqlite
 .claude/settings.local.json
+
+# Indexer database
+indexer/*.db
+indexer/*.db-*
