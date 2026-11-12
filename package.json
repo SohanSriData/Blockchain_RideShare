@@ -1,0 +1,17 @@
+{
+  "name": "ride-coop",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Decentralized Ride & Errand co-op",
+  "workspaces": ["web", "indexer"],
+  "engines": { "node": ">=22.13" },
+  "scripts": {
+    "check:env": "node scripts/check-env.mjs",
+    "chain": "anvil --chain-id 31337 --block-time 1",
+    "test:contracts": "cd contracts && forge test",
+    "build:contracts": "cd contracts && forge build",
+    "dev:web": "npm run dev -w web",
+    "dev:indexer": "npm run dev -w indexer",
+    "typecheck": "npm run typecheck -w indexer && npm run build -w web"
+  }
+}

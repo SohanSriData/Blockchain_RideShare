@@ -6,3 +6,4 @@ out/
 cache/
 broadcast/
 *.sqlite
+.claude/settings.local.json
