@@ -54,7 +54,7 @@ uvx --from slither-analyzer slither . --filter-paths "lib|test|script"   # stati
 ```
 
 Static analysis has not been run yet: it needs `slither-analyzer` installed (use uv, caches on a drive with space).
-Design decisions are in `docs/adr/`; the glossary is `CONTEXT.md`.
+Design decisions are in `docs/adr/`; the glossary is `CONTEXT.md`. New collaborators: read `docs/COLLABORATING.md`.
 
 ## Known limits
 
