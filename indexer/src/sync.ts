@@ -45,7 +45,9 @@ export class Syncer {
 export function viemSource(rpcUrl: string, addresses: Address[]): ChainSource {
   const client = createPublicClient({ transport: http(rpcUrl) });
   return {
-    head: () => client.getBlockNumber(),
+    // cacheTime 0: viem caches eth_blockNumber for its polling interval, and a stale head would both delay events
+    // and (if lower than the last indexed block) be mistaken for a restarted chain.
+    head: () => client.getBlockNumber({ cacheTime: 0 }),
     blockHash: async (n) => (await client.getBlock({ blockNumber: n }).catch(() => null))?.hash ?? null,
     logs: async (from, to) => {
       const logs = await client.getLogs({ address: addresses, fromBlock: from, toBlock: to });
@@ -59,8 +61,9 @@ export function viemSource(rpcUrl: string, addresses: Address[]): ChainSource {
             blockNumber: log.blockNumber,
             logIndex: log.logIndex,
           });
-        } catch {
-          // not one of our events
+        } catch (err) {
+          // Our contracts only emit events in eventAbi, so a failure here is a real ABI mismatch: never hide it.
+          console.warn(`indexer: could not decode log ${log.transactionHash}#${log.logIndex}: ${(err as Error).message}`);
         }
       }
       return out;

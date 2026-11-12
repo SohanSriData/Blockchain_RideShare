@@ -48,6 +48,15 @@ test("open rides lists only requested rides, oldest first", () => {
   assert.equal(r.pickupLat, 12346);
 });
 
+test("a single ride can be looked up by id", () => {
+  const m = fresh();
+  m.apply([requested(1n), requested(2n, B, 250n), ev("RideAccepted", { id: 2n, driver: A })]);
+  assert.equal(m.ride(1)?.rider, A);
+  assert.equal(m.ride(2)?.status, "Accepted");
+  assert.equal(m.ride(2)?.fare, "250");
+  assert.equal(m.ride(3), undefined);
+});
+
 test("cancelled and completed rides leave the open list", () => {
   const m = fresh();
   m.apply(lifecycle());

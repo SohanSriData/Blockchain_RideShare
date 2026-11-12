@@ -32,11 +32,34 @@ npm run check:env                           # must print only "ok" lines
 ## Everyday commands
 
 ```sh
-npm run chain             # local Anvil chain on :8545 (chain id 31337)
-npm run test:contracts    # forge test
-npm run dev:web           # web app
-npm run dev:indexer       # indexer
+npm run chain             # local Anvil chain on :8545 (chain id 31337, 1 s blocks)
+npm run deploy:local      # deploy the four contracts and sync addresses into the web app
+npm run dev:indexer       # read-only indexer on :8787
+npm run dev:web           # web app on :3000
+npm test                  # contracts (forge), indexer and web unit tests
+npm run e2e               # scripted end-to-end run, repeated after a chain wipe
 ```
+
+Run order for a manual demo: `chain`, `deploy:local`, `dev:indexer`, `dev:web`, then connect a wallet
+(MetaMask on `http://127.0.0.1:8545`, chain id 31337) using the public Anvil test accounts.
+
+## Extra checks
+
+```sh
+cd contracts
+forge test --gas-report                                   # gas for money-moving functions
+forge test --match-contract GasComparisonTest -vv         # events-only design vs on-chain-storage baseline
+forge coverage --report summary                           # coverage
+uvx --from slither-analyzer slither . --filter-paths "lib|test|script"   # static analysis (not yet run, see below)
+```
+
+Static analysis has not been run yet: it needs `slither-analyzer` installed (use uv, caches on a drive with space).
+Design decisions are in `docs/adr/`; the glossary is `CONTEXT.md`.
+
+## Known limits
+
+- Two-address farming (a driver requesting from a second address) is not prevented; it costs the fee and the minimum fare each time.
+- Fee and treasury rounding: see ADR 0001. There is no dispute resolution or slashing (out of scope).
 
 ## Secrets
 
