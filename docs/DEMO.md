@@ -2,6 +2,11 @@
 
 Two ways to demo: the **local demo** (recommended, needs no real accounts or funds) and an **optional Sepolia demo** on a public test network.
 
+## What are Anvil and Sepolia?
+
+- **Anvil** is a fake Ethereum blockchain that runs on your own computer (part of Foundry). It starts instantly, has 10 pre-funded accounts, needs no internet, and disappears when stopped. The local demo uses it.
+- **Sepolia** is a real public Ethereum test network. Anyone can see your contracts on a block explorer, its ETH is free from faucets and has no value, and blocks take about 12 seconds. It is only for the optional public demo in section 3.
+
 ## 1. Accounts and tools you need
 
 ### Required for the local demo

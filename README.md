@@ -2,6 +2,21 @@
 
 Driver-owned ride co-op: staked membership, escrowed fares with an automatic fee split, on-chain governance and reputation. Spec: `.scratch/decentralized-ride-coop/spec.md`.
 
+## Documentation
+
+| Doc | For |
+|---|---|
+| `docs/PROJECT_REPORT.md` | Full report: requirements, architecture, design choices, verification, limits |
+| `docs/DEMO.md` | How to demo, which accounts to create, optional Sepolia steps |
+| `docs/COLLABORATING.md` | Onboarding, status, open work, working agreements |
+| `docs/adr/` | Decision records (fare split, immutable wiring, Slither triage) |
+| `CONTEXT.md` | Domain glossary |
+
+## Networks: Anvil and Sepolia
+
+- **Anvil** is a throwaway Ethereum chain that runs on your own machine (it ships with Foundry). It is instant, free, and comes with pre-funded test accounts. All development, tests, `npm run e2e` and the default demo use it.
+- **Sepolia** is a public Ethereum test network. Its ETH is free from faucets and worthless. It is only needed for an optional public deployment, and the web app needs a small change before it works there (see `docs/DEMO.md`).
+
 ## Layout
 
 - `contracts/` Foundry project (Solidity 0.8.28, the four contracts and their tests)
