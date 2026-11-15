@@ -38,12 +38,12 @@ Follow `README.md` (Setup, then Everyday commands). Windows notes:
 | Indexer | Done. 21 tests including reorg/wipe recovery |
 | Web app | Done. Rider, driver, governance; 7 unit tests; `next build` passes |
 | End-to-end script | Done. `npm run e2e` |
-| Static analysis (Slither) | **Not run** (see below) |
+| Static analysis (Slither) | Done. No high or medium findings; triage in ADR 0003 |
 | Sepolia deployment | **Not done** (optional) |
 
 ## Open work you can pick up
 
-1. **Run Slither** from `contracts/` and triage the findings: `uvx --from slither-analyzer slither . --filter-paths "lib|test|script"`. Record results in an ADR or the README.
+1. **Re-run Slither** after any contract change and update ADR 0003.
 2. **Deploy to Sepolia** (`forge script script/Deploy.s.sol --rpc-url <url> --broadcast` with a funded key supplied via env or keystore, never committed). Non-local chains default to 1 day voting and a 30 minute claim timeout. Then point `web/src/lib/deployment.json` at the new addresses (`npm run sync:deployment`).
 3. **Refactors flagged in review** (judgement calls, not bugs):
    - The proposal-kind list is defined in three places (contracts, indexer `events.ts`, web `contracts.ts`).

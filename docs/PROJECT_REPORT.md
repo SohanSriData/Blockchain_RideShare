@@ -87,7 +87,7 @@ Tests live at two seams only: the public interface of the deployed four-contract
 
 ## 6. Known limits and open items
 
-- **Static analysis (Slither) has not been run.** The tool could not be launched from the build environment. Run: `uvx --from slither-analyzer slither . --filter-paths "lib|test|script"` in `contracts/`.
+- **Static analysis:** Slither (102 detectors) reported 19 results of 7 types, none high or medium. All were reviewed and accepted as intended, false positives or style; see `docs/adr/0003-slither-static-analysis-triage.md`. This is not an audit.
 - **No Sepolia deployment** (optional in the spec). Steps are in `docs/DEMO.md`.
 - **Two-address farming** is not prevented (a driver requesting from a second address); it costs the fee and minimum fare each time.
 - **No dispute resolution or slashing.**

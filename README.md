@@ -50,10 +50,10 @@ cd contracts
 forge test --gas-report                                   # gas for money-moving functions
 forge test --match-contract GasComparisonTest -vv         # events-only design vs on-chain-storage baseline
 forge coverage --report summary                           # coverage
-uvx --from slither-analyzer slither . --filter-paths "lib|test|script"   # static analysis (not yet run, see below)
+uvx --from slither-analyzer slither . --filter-paths "lib|test|script"   # static analysis
 ```
 
-Static analysis has not been run yet: it needs `slither-analyzer` installed (use uv, caches on a drive with space).
+Slither has been run: no high or medium findings; the triage is in `docs/adr/0003-slither-static-analysis-triage.md`. It needs uv (set `UV_CACHE_DIR` and `UV_TOOL_DIR` to a drive with space).
 Design decisions are in `docs/adr/`; the glossary is `CONTEXT.md`. New collaborators: read `docs/COLLABORATING.md`.
 
 ## Known limits
