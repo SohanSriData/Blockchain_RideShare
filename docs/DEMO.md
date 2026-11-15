@@ -109,10 +109,11 @@ Only do this if you want the demo on a public test network. It needs a funded de
    forge script script/Deploy.s.sol --rpc-url <ALCHEMY_SEPOLIA_URL> --broadcast --private-key <DEPLOYER_KEY>
    ```
    Non-local chains default to 1 day voting and a 30 minute claim timeout. For a short demo override them: set `VOTING_PERIOD=120` and `CLAIM_TIMEOUT=180` in the environment first.
-4. The script writes `contracts/deployments/11155111.json`. Copy those addresses into `web/src/lib/deployment.json` (or run `npm run sync:deployment` after adjusting the script's chain id), and point the indexer at the deployment with `RPC_URL=<ALCHEMY_SEPOLIA_URL>` and `DEPLOYMENT=<path to the json>`.
-5. Add the Sepolia network in MetaMask (built in under "Show test networks"), switch the web app's configured chain accordingly, and follow the script in section 2.3.
+4. The script writes `contracts/deployments/11155111.json`. Copy it into the web app with `CHAIN_ID=11155111 npm run sync:deployment`, and start the indexer with `RPC_URL=<ALCHEMY_SEPOLIA_URL> DEPLOYMENT=../contracts/deployments/11155111.json npm run dev:indexer`.
+5. The web app is currently hard-wired to the local chain: `web/src/lib/wagmi.ts` lists only viem's `anvil` chain and reads `NEXT_PUBLIC_RPC_URL`. To use Sepolia, import `sepolia` from `viem/chains`, use it in `chains` and `transports`, and set `NEXT_PUBLIC_RPC_URL` to your Alchemy URL. This change is **not yet made or tested**.
+6. Add the Sepolia network in MetaMask (under "Show test networks") and follow the script in section 2.3.
 
-Sepolia blocks take about 12 seconds, so allow time between steps. The web app is configured for the local chain by default; switching it to Sepolia is an untested step and may need a small change in `web/src/lib/wagmi.ts`.
+Sepolia blocks take about 12 seconds, so allow time between steps.
 
 ## 4. Before presenting
 
