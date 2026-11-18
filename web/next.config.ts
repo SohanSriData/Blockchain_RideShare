@@ -6,9 +6,9 @@ import { resolve } from "node:path";
 // forceReload: Next already loaded (and cached) env from web/, which would make a plain call a no-op.
 loadEnvConfig(resolve(process.cwd(), ".."), process.env.NODE_ENV !== "production", console, true);
 
-const nextConfig: NextConfig = {
-  cacheComponents: true,
-  partialPrefetching: true,
-};
+// Cache Components is deliberately off: it keeps previously visited routes mounted but hidden (React Activity),
+// which runs react-leaflet's cleanup (map.remove()) and then re-adds layers to the dead map. Navigating
+// Driver -> Rider crashed with "Cannot read properties of undefined (reading 'appendChild')".
+const nextConfig: NextConfig = {};
 
 export default nextConfig;
