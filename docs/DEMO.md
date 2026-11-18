@@ -70,13 +70,19 @@ Local timings are short for demos: voting lasts 1 minute, the driver claim timeo
 
 ### 2.3 Script
 
-1. **Join.** Open `/driver` as Driver, click "Join the co-op" (0.01 ETH, refundable) and confirm in MetaMask. Repeat as Member 3. Point out that the stake is returned on exit.
-2. **Request.** Switch to Rider, open `/rider`, choose pickup and drop-off (click the map or search an address). Note the suggested fare (distance times per-km rate, never below the minimum). Request the ride and confirm. Your balance drops: the fare is now escrowed in the contract.
-3. **Accept.** Switch to Driver, open `/driver`. The ride appears in the open list sorted by distance. Accept it. (If the Driver is also the requester, the contract rejects it; try this to show the rule.)
-4. **Complete.** As Rider confirm completion. The driver receives 95% of the fare and 5% goes to the treasury, visible on `/governance`.
-5. **Rate.** Rider rates the driver 1 to 5; Driver rates the rider. Reputation badges update.
-6. **Govern.** On `/governance` as Driver, propose a fee change (for example 5% to 8%). Vote yes as Driver and as Member 3. Wait about a minute, press Execute (anyone can), and see the new fee. Run another ride to show the new split.
-7. **Edge cases (optional).** Cancel a ride before it is accepted (full refund). Accept a ride as Driver, do not confirm, wait 2 minutes, then use Claim fare. Try Claim earlier to see the readable "too early" error.
+The app has one screen per role, each with its own colour: **Ride** (`/rider`, teal booking screen), **Drive** (`/driver`, amber dashboard) and **Governance** (indigo). The header always shows who is acting: role, ETH balance, membership and rating next to the address. Rides show a step tracker (Requested, Accepted, Completed or Cancelled) with a hint of what happens next.
+
+1. **Join.** Open **Drive** as Driver. In the Membership card click "Join the co-op" (0.01 ETH, refundable) and confirm in MetaMask. Repeat as Member 3. Point out that the stake is returned on exit ("Leave and recover stake").
+2. **Request.** As Rider open **Ride**. Set pickup and drop-off in the "Book a ride" panel (click the map or search an address). Note the suggested fare (distance times per-km rate, never below the minimum). Click "Request ride" and confirm. The "Current ride" tracker shows Requested: the fare is now escrowed in the contract.
+3. **Accept.** As Driver open **Drive**. The ride appears under "Open jobs", nearest first. Accept it; it moves to "Active ride" and the rider's tracker moves to Accepted. A driver never sees their own requests, and the contract also rejects self-acceptance (`SelfDealing`). To show the rule, see section 2.5.
+4. **Complete.** As Rider click "Confirm completed". The driver receives 95% of the fare (the Earned card goes up) and 5% goes to the treasury, listed as "Ride fee" on **Governance**.
+5. **Rate.** The Rider's tracker stays on "Latest ride" with a rating control: rate the driver 1 to 5. Under "Past rides" on **Drive**, the Driver rates the rider. The ★ ratings in the header and on the cards update.
+6. **Govern.** On **Governance** as Driver, propose a fee change (for example Fee, value 8). Vote yes as Driver and as Member 3 within the one-minute window (connect Member 3 to the site beforehand, see the troubleshooting table). Wait for the window to close, press Execute (anyone can), and see the new fee. Run another ride to show the new split.
+7. **Edge cases (optional).** Cancel a ride before it is accepted (full refund). Accept a ride as Driver, do not confirm, and watch the claim countdown on the active ride; after 2 minutes click "Claim fare". Clicking it earlier shows "The claim timeout has not elapsed yet." straight away: the app checks every transaction before opening MetaMask, so nothing is sent and no gas is spent.
+
+### 2.3.1 Running the demo on one laptop without switching accounts
+
+MetaMask has one active account per browser profile, shared by all tabs, so tabs alone do not help. Instead create one Chrome profile per role (profile icon, Add), install MetaMask in each, import only that role's key and add the Anvil network. Put the Rider window (**Ride**) and the Driver window (**Drive**) side by side: a request on the left appears in the Driver's open jobs within about 2 seconds, and accepting on the right moves the rider's tracker. Use a third profile for Member 3, or briefly switch the Driver profile's account for the vote.
 
 ### 2.4 What to say
 
@@ -92,6 +98,15 @@ npm run e2e
 
 Runs the entire flow against a real temporary chain, cross-checks the chain and the indexer at every step, then repeats after wiping the chain. It ends with `E2E passed`.
 
+**Showing the self-accept rule.** The Drive screen never lists your own requests, so show the contract rule from Git Bash (repo root, local chain running). Member 3 requests a ride, a simulated accept by Member 3 reverts with `SelfDealing()` (selector `0x74ca9bd8`), and the ride is then cancelled. Replace `<id>` with the new ride's number from the **Ride** screen or `curl http://127.0.0.1:8787/rides/open`.
+
+```sh
+RIDES=$(node -p "require('./web/src/lib/deployment.json').rideServices"); M3=0x90F79bf6EB2c4f870365E785982E1f101E93b906
+cast send --unlocked --from $M3 $RIDES "requestRide(int256,int256,int256,int256)" 17400000 78450000 17360000 78520000 --value 0.002ether
+cast call --from $M3 $RIDES "acceptRide(uint256)" <id>      # reverts: custom error 0x74ca9bd8 = SelfDealing()
+cast send --unlocked --from $M3 $RIDES "cancelRide(uint256)" <id>
+```
+
 ### 2.6 Troubleshooting
 
 | Symptom | Fix |
@@ -100,7 +115,8 @@ Runs the entire flow against a real temporary chain, cross-checks the chain and 
 | Switching account in MetaMask does not change the address in the app | MetaMask only exposes accounts connected to the site: open its site-connection menu on localhost:3000, Edit accounts, and tick Rider, Driver and Member 3 once before the demo |
 | Transactions hang or nonce errors after restarting Anvil | Re-run `npm run deploy:local`, restart the indexer, then in MetaMask: Settings, Advanced, Clear activity tab data |
 | App shows no rides | Check the indexer terminal is running and `http://127.0.0.1:8787/health` responds |
-| "Claim too early" | Anvil's clock can run ahead of the wall clock; wait a little and retry |
+| "The claim timeout has not elapsed yet." | The countdown on the active ride uses chain time; wait for it and retry. Nothing was sent |
+| "Connect wallet" does nothing | No wallet in this browser (the app says so). Use a browser with MetaMask |
 | Maps show straight lines only | `ORS_API_KEY` missing or invalid in `.env.local`; restart `dev:web` after editing |
 | `check:env` fails | Install the exact versions named in the README |
 
@@ -124,5 +140,6 @@ Sepolia blocks take about 12 seconds, so allow time between steps.
 ## 4. Before presenting
 
 - Run `npm test` and `npm run e2e` once beforehand.
-- Pre-fund and pre-import the MetaMask accounts, and rehearse the wait during voting (use the minute to explain governance).
+- Pre-fund and pre-import the MetaMask accounts, connect all of them to `localhost:3000` once, and rehearse the wait during voting (use the minute to explain governance).
+- For a clean slate run `npm run deploy:local` and restart the indexer (no Anvil restart, so MetaMask nonces stay valid).
 - Keep `docs/PROJECT_REPORT.md` open for questions about design and limits.

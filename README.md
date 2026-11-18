@@ -7,9 +7,9 @@ Driver-owned ride co-op: staked membership, escrowed fares with an automatic fee
 | Doc | For |
 |---|---|
 | `docs/PROJECT_REPORT.md` | Full report: requirements, architecture, design choices, verification, limits |
-| `docs/DEMO.md` | How to demo, which accounts to create, optional Sepolia steps |
+| `docs/DEMO.md` | How to demo (script, one-laptop setup with a Chrome profile per role), which accounts to create, optional Sepolia steps |
 | `docs/COLLABORATING.md` | Onboarding, status, open work, working agreements |
-| `docs/adr/` | Decision records (fare split, immutable wiring, Slither triage) |
+| `docs/adr/` | Decision records (fare split, immutable wiring, Slither triage, web wallet and transactions) |
 | `CONTEXT.md` | Domain glossary |
 
 ## Networks: Anvil and Sepolia

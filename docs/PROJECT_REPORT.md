@@ -53,7 +53,15 @@ The contracts reference each other through `immutable` addresses computed from t
 
 ### 3.3 Web app (`web`)
 
-Next.js 16, wagmi 3, viem, react-leaflet. Pages: home, `/rider` (map, address search, suggested editable fare, request and cancel, confirm and rate), `/driver` (join and exit, open rides sorted by distance, accept, claim, rate), `/governance` (current parameters, proposals, voting, execution, treasury). Server route handlers proxy OpenRouteService geocoding and routing so the API key never reaches the browser; if routing fails the app falls back to a haversine straight-line distance. Transactions show pending and confirmed states with readable error messages for contract reverts.
+Next.js 16, wagmi 3, viem, react-leaflet. One screen per role, each with its own accent colour:
+
+- `/rider` (**Ride**): a booking screen with the map beside a "Book a ride" panel (pickup, drop-off, address search, distance, suggested editable fare, Request). A "Current ride" card shows a step tracker (Requested, Accepted, Completed or Cancelled) with the next action: cancel, confirm completion, or rate the driver.
+- `/driver` (**Drive**): a dashboard with Earned, Driver rating and Membership (join and exit) cards, an "Active ride" card with the tracker and a claim countdown, open jobs sorted by distance beside the map, and past rides with rider ratings.
+- `/governance`: current parameters and the treasury (ride fees and donations), new proposals, voting and execution.
+
+A sticky header shows the connected account's role, ETH balance, membership and rating. Server route handlers proxy OpenRouteService geocoding and routing so the API key never reaches the browser; if routing fails the app falls back to a haversine straight-line distance.
+
+Every read and write is pinned to the deployment's chain id. Each transaction is simulated before the wallet opens, so a call that would revert shows its readable reason and is never broadcast; sent transactions show wallet, pending and confirmed states, and a revert on chain reports its reason at once. Wallet state is kept in a cookie and passed to the server render so returning users do not see a "Connect wallet" flash. See ADR 0004.
 
 ## 4. Design choices worth knowing
 
@@ -75,6 +83,7 @@ Next.js 16, wagmi 3, viem, react-leaflet. Pages: home, `/rider` (map, address se
 | Typecheck, lint, `next build` | Clean |
 | End-to-end (`npm run e2e`) | Passes: join, request, accept, complete, rate, propose, vote, execute against a live Anvil chain with the model and the HTTP API cross-checked at every step; repeated after wiping and restarting the chain on the same indexer database |
 | Secret hygiene | ORS key confirmed absent from the client bundle and from git history |
+| Manual browser demo | Full script of `docs/DEMO.md` run in Chrome with real MetaMask: join, request, accept, complete (95/5 split checked on chain to the wei), ratings, fee vote 5% to 8% and execute, 92/8 split on later rides, cancel before accept (full refund), early claim (readable error, nothing sent) and claim after timeout; every navigation order between pages without console errors |
 
 Tests live at two seams only: the public interface of the deployed four-contract suite, and the indexer read model against emitted events.
 
@@ -84,6 +93,15 @@ Tests live at two seams only: the public interface of the deployed four-contract
 - Wall-clock proposal status was wrong when Anvil's chain time ran ahead; replaced with chain time.
 - Two fee tests recomputed the contract's own formula; they now use literal expected values.
 - The ORS key appeared ignored because of a cached environment load; fixed with a forced reload.
+
+Found in the browser demo:
+
+- Navigating Driver to Rider crashed the map (Cache Components kept the old page mounted while Leaflet removed its map); Cache Components is off.
+- "Connect wallet" re-opened MetaMask's account picker on every click and collided with a still-open prompt; the connector no longer forces the picker.
+- Reads followed the wallet's chain, so a wallet on another network broke the stake read and Join stayed disabled; all calls are pinned to the deployment's chain.
+- An early "Claim fare" was broadcast and reverted, costing gas, and the page showed "Pending…" for a long time before a bare "Failed on chain"; transactions are now simulated first and reverts report their reason.
+- A button's "Confirmed" status leaked to the button that replaced it (Join to Leave) and across account switches.
+- "Connect wallet" flashed on every page load before the automatic reconnect; wallet state is now cookie-backed for the server render.
 
 ## 6. Known limits and open items
 
