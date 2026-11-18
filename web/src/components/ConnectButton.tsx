@@ -20,7 +20,7 @@ export function ConnectButton() {
         return;
       }
       setNoWallet(false);
-      connect.mutate({ connector: connect.connectors[0] });
+      connect.mutate({ connector: connect.connectors[0], chainId: CHAIN_ID });
     };
     return (
       <span className="row">
