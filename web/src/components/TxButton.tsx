@@ -13,12 +13,15 @@ export function TxButton({
   onDone,
   disabled,
   className,
+  wide,
 }: {
   label: string;
   request: TxRequest;
   onDone?: () => void;
   disabled?: boolean;
   className?: string;
+  /** Full-width primary action with the status underneath. */
+  wide?: boolean;
 }) {
   const config = useConfig();
   const { address } = useConnection();
@@ -73,7 +76,7 @@ export function TxButton({
   const error = preflightError ?? write.error ?? receipt.error;
 
   return (
-    <span className="tx">
+    <span className={wide ? "big-tx" : "tx"}>
       <button className={className} disabled={disabled || busy} onClick={send}>
         {label}
       </button>

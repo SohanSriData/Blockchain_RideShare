@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { headers } from "next/headers";
 import { cookieToInitialState } from "wagmi";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
-import { ConnectButton } from "@/components/ConnectButton";
+import { SiteHeader } from "@/components/SiteHeader";
 import { config } from "@/lib/wagmi";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -22,15 +21,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body>
         <Providers initialState={initialState}>
-          <header>
-            <nav>
-              <Link href="/">Home</Link>
-              <Link href="/rider">Rider</Link>
-              <Link href="/driver">Driver</Link>
-              <Link href="/governance">Governance</Link>
-            </nav>
-            <ConnectButton />
-          </header>
+          <SiteHeader />
           <main>{children}</main>
         </Providers>
       </body>

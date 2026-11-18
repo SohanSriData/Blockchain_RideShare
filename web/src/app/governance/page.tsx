@@ -6,7 +6,7 @@ import { isAddress, parseEther } from "viem";
 import { TxButton } from "@/components/TxButton";
 import { addresses, CHAIN_ID, governanceAbi, membershipAbi, PROPOSAL_KINDS } from "@/lib/contracts";
 import { friendlyError } from "@/lib/errors";
-import { eth, short } from "@/lib/format";
+import { eth, sameAddress, short } from "@/lib/format";
 import { useIndexer, type ProposalView, type TreasuryView } from "@/lib/indexer";
 
 const read = (functionName: "feePercent" | "FEE_CAP_PERCENT" | "perKmRate" | "minFare" | "claimTimeout" | "treasuryBalance") =>
@@ -32,13 +32,14 @@ export default function GovernancePage() {
   const refresh = () => setTimeout(() => { proposals.refetch(); treasury.refetch(); balance.refetch(); fee.refetch(); rate.refetch(); minFare.refetch(); timeout.refetch(); }, 1500);
 
   return (
-    <>
+    <div className="role-gov">
       <h1>Governance</h1>
       {!isConnected && <p className="notice">Connect your wallet to propose and vote.</p>}
       {isConnected && !member.data && <p className="notice">Only staked members can propose and vote. Join on the Driver page.</p>}
       {proposals.error && <p className="notice err">{proposals.error}</p>}
 
-      <section>
+      <div className="split-even" style={{ marginBottom: 16 }}>
+      <section className="panel" style={{ margin: 0 }}>
         <h2>Current rules</h2>
         <dl>
           <dt>Fee</dt><dd>{fee.data?.toString() ?? "…"}% (cap {cap.data?.toString() ?? "…"}%)</dd>
@@ -48,19 +49,25 @@ export default function GovernancePage() {
         </dl>
       </section>
 
-      <section>
+      <section className="panel" style={{ margin: 0 }}>
         <h2>Treasury: {balance.data !== undefined ? eth(balance.data) : "…"}</h2>
         <Deposit onDone={refresh} />
         {treasury.data?.history.length === 0 && <p className="muted">No treasury activity yet.</p>}
         {[...(treasury.data?.history ?? [])].reverse().map((h, i) => (
-          <div key={i} className="card">
-            <span>{h.type === "deposit" ? "Deposit from" : "Spend to"} <span className="mono">{short(h.counterparty)}</span></span>
+          <div key={i} className="kv" style={{ padding: "6px 0", borderTop: "1px solid var(--line)" }}>
+            <span>
+              {h.type === "spend" ? <>Spend to <span className="mono">{short(h.counterparty)}</span></>
+                : sameAddress(h.counterparty, addresses.rideServices) ? "Ride fee"
+                : <>Donation from <span className="mono">{short(h.counterparty)}</span></>}
+            </span>
             <span className={h.type === "deposit" ? "ok" : "err"}>{h.type === "deposit" ? "+" : "-"}{eth(h.amount)}</span>
           </div>
         ))}
       </section>
 
-      <section>
+      </div>
+
+      <section className="panel">
         <h2>New proposal</h2>
         <NewProposal disabled={!member.data} onDone={refresh} />
       </section>
@@ -72,7 +79,7 @@ export default function GovernancePage() {
           <ProposalCard key={p.id} p={p} canVote={!!member.data} onDone={refresh} />
         ))}
       </section>
-    </>
+    </div>
   );
 }
 
@@ -100,10 +107,10 @@ function ProposalCard({ p, canVote, onDone }: { p: ProposalView; canVote: boolea
   return (
     <div className="card">
       <span>
-        <strong>#{p.id}</strong> {describe(p)}
+        <strong>#{p.id}</strong> {describe(p)} <span className="status-pill">{p.status}</span>
         <br />
         <small className="muted">
-          {p.status} · for {p.forVotes} / against {p.againstVotes} · quorum {p.quorum} · ends {new Date(p.endTime * 1000).toLocaleTimeString()}
+          for {p.forVotes} / against {p.againstVotes} · quorum {p.quorum} · ends {new Date(p.endTime * 1000).toLocaleTimeString()}
         </small>
       </span>
       <span className="row">

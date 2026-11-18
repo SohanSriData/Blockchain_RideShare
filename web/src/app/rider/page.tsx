@@ -7,6 +7,7 @@ import { formatEther, parseEther } from "viem";
 import { TxButton } from "@/components/TxButton";
 import { RateControl } from "@/components/RateControl";
 import { RepBadge } from "@/components/RepBadge";
+import { RideTracker } from "@/components/RideTracker";
 import { addresses, CHAIN_ID, governanceAbi, rideAbi } from "@/lib/contracts";
 import { eth, sameAddress, short } from "@/lib/format";
 import { haversineKm, suggestFare, toMicroDegrees, type LatLng } from "@/lib/geo";
@@ -14,13 +15,18 @@ import { useIndexer, type RideView } from "@/lib/indexer";
 
 const MapView = dynamic(() => import("@/components/MapView"), { ssr: false });
 const HYDERABAD: LatLng = { lat: 17.385, lng: 78.4867 };
+const PICKUP_COLOR = "#0f766e";
+const DROP_COLOR = "#b3261e";
 
 type Hit = { label: string; lat: number; lng: number };
+type Place = LatLng & { label?: string };
+
+const placeText = (p?: Place) => (p ? (p.label ?? `${p.lat.toFixed(4)}, ${p.lng.toFixed(4)}`) : undefined);
 
 export default function RiderPage() {
   const { address, isConnected } = useConnection();
-  const [pickup, setPickup] = useState<LatLng>();
-  const [drop, setDrop] = useState<LatLng>();
+  const [pickup, setPickup] = useState<Place>();
+  const [drop, setDrop] = useState<Place>();
   const [mode, setMode] = useState<"pickup" | "drop">("pickup");
   const [center, setCenter] = useState<LatLng>(HYDERABAD);
   const [query, setQuery] = useState("");
@@ -63,7 +69,7 @@ export default function RiderPage() {
   }
   const belowMin = fareWei !== undefined && minFare.data !== undefined && fareWei < minFare.data;
 
-  function place(p: LatLng) {
+  function place(p: Place) {
     if (mode === "pickup") {
       setPickup(p);
       setMode("drop");
@@ -86,55 +92,90 @@ export default function RiderPage() {
   }
 
   const markers = [
-    ...(pickup ? [{ id: "p", ...pickup, color: "#1f5f4a", label: "Pickup" }] : []),
-    ...(drop ? [{ id: "d", ...drop, color: "#b3261e", label: "Drop-off" }] : []),
+    ...(pickup ? [{ id: "p", ...pickup, color: PICKUP_COLOR, label: "Pickup" }] : []),
+    ...(drop ? [{ id: "d", ...drop, color: DROP_COLOR, label: "Drop-off" }] : []),
   ];
-  const mine = (rides.data ?? []).filter((r) => sameAddress(r.rider, address));
+  const mine = [...(rides.data ?? []).filter((r) => sameAddress(r.rider, address))].reverse();
+  const active = mine.filter((r) => r.status === "Requested" || r.status === "Accepted");
+  // With nothing in progress, the newest finished ride stays on top (tracker plus rating) until the next request.
+  const current = active.length > 0 ? active : mine.slice(0, 1);
+  const past = mine.filter((r) => !current.includes(r));
+  const refetch = () => setTimeout(rides.refetch, 1500);
 
   return (
-    <>
-      <h1>Request a ride</h1>
+    <div className="role-rider">
+      <h1>Where to?</h1>
       {!isConnected && <p className="notice">Connect your wallet to request a ride.</p>}
       {rides.error && <p className="notice err">{rides.error}</p>}
 
-      <section>
-        <div className="row">
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search an address" aria-label="Search address" />
-          <button className="ghost" onClick={search} disabled={!query.trim()}>Search</button>
-          <button className={mode === "pickup" ? "" : "ghost"} onClick={() => setMode("pickup")}>Set pickup</button>
-          <button className={mode === "drop" ? "" : "ghost"} onClick={() => setMode("drop")}>Set drop-off</button>
-        </div>
-        {searchMsg && <p className="muted">{searchMsg}</p>}
-        {hits.map((h) => (
-          <div key={`${h.lat},${h.lng}`}>
-            <button className="ghost" onClick={() => { setCenter({ lat: h.lat, lng: h.lng }); place({ lat: h.lat, lng: h.lng }); setHits([]); }}>
-              {h.label}
-            </button>
-          </div>
-        ))}
-        <MapView center={center} markers={markers} onMapClick={place} />
-        <p className="muted">Click the map to set the {mode === "pickup" ? "pickup" : "drop-off"} point.</p>
-      </section>
+      {current.length > 0 && (
+        <section>
+          <h2>{active.length === 0 ? "Latest ride" : `Current ride${current.length > 1 ? "s" : ""}`}</h2>
+          {current.map((r) => (
+            <CurrentRide key={r.id} ride={r} onChange={refetch} />
+          ))}
+        </section>
+      )}
 
-      <section>
-        <h2>Fare</h2>
-        {route ? (
-          <p>
-            Distance {route.distanceKm.toFixed(1)} km ({route.source}). Rate {rate.data !== undefined ? eth(rate.data) : "…"} per km, minimum fare{" "}
-            {minFare.data !== undefined ? eth(minFare.data) : "…"}.
-          </p>
-        ) : (
-          <p className="muted">Choose pickup and drop-off to get a suggested fare.</p>
-        )}
-        <div className="row">
-          <label>
-            Fare (ETH) <input value={fareText} onChange={(e) => setFareEdit(e.target.value)} inputMode="decimal" />
-          </label>
-          {suggested !== undefined && <button className="ghost" onClick={() => setFareEdit(null)}>Use suggested</button>}
+      <section className="split map-tall">
+        <div>
+          <div className="row" style={{ display: "flex", marginBottom: 8 }}>
+            <input
+              style={{ flex: 1 }}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && query.trim() && search()}
+              placeholder={`Search the ${mode === "pickup" ? "pickup" : "drop-off"} address`}
+              aria-label="Search address"
+            />
+            <button className="ghost" onClick={search} disabled={!query.trim()}>Search</button>
+          </div>
+          {searchMsg && <p className="muted">{searchMsg}</p>}
+          {hits.length > 0 && (
+            <div className="hits">
+              {hits.map((h) => (
+                <button key={`${h.lat},${h.lng}`} className="ghost" onClick={() => { setCenter({ lat: h.lat, lng: h.lng }); place(h); setHits([]); setQuery(""); }}>
+                  {h.label}
+                </button>
+              ))}
+            </div>
+          )}
+          <MapView center={center} markers={markers} onMapClick={place} />
+          <p className="muted" style={{ margin: "6px 0 0" }}>Click the map to set the {mode === "pickup" ? "pickup" : "drop-off"} point.</p>
         </div>
-        {belowMin && <p className="err">Below the governed minimum fare.</p>}
-        <p>
+
+        <aside className="panel stack">
+          <h2>Book a ride</h2>
+          <button className={`point${mode === "pickup" ? " active" : ""}`} onClick={() => setMode("pickup")}>
+            <span className="dot" style={{ background: PICKUP_COLOR }} />
+            <span>Pickup<small>{placeText(pickup) ?? "Click the map or search"}</small></span>
+          </button>
+          <button className={`point${mode === "drop" ? " active" : ""}`} onClick={() => setMode("drop")}>
+            <span className="dot" style={{ background: DROP_COLOR }} />
+            <span>Drop-off<small>{placeText(drop) ?? "Click the map or search"}</small></span>
+          </button>
+
+          {route ? (
+            <>
+              <div className="kv"><span>Distance</span><span>{route.distanceKm.toFixed(1)} km {route.source !== "route" && <small className="muted">({route.source})</small>}</span></div>
+              <div className="kv"><span>Rate</span><span>{rate.data !== undefined ? eth(rate.data) : "…"} / km</span></div>
+              <div className="kv"><span>Minimum fare</span><span>{minFare.data !== undefined ? eth(minFare.data) : "…"}</span></div>
+            </>
+          ) : (
+            <p className="muted" style={{ margin: 0 }}>Choose pickup and drop-off to get a suggested fare.</p>
+          )}
+
+          <label>
+            Your fare offer (ETH)
+            <input value={fareText} onChange={(e) => setFareEdit(e.target.value)} inputMode="decimal" />
+          </label>
+          {fareEdit !== null && suggested !== undefined && (
+            <button className="ghost" onClick={() => setFareEdit(null)}>Use suggested ({formatEther(suggested)})</button>
+          )}
+          {belowMin && <p className="err" style={{ margin: 0 }}>Below the governed minimum fare.</p>}
+
           <TxButton
+            wide
             label="Request ride"
             disabled={!isConnected || !pickup || !drop || fareWei === undefined || belowMin}
             request={{
@@ -144,47 +185,54 @@ export default function RiderPage() {
               args: pickup && drop ? [toMicroDegrees(pickup.lat), toMicroDegrees(pickup.lng), toMicroDegrees(drop.lat), toMicroDegrees(drop.lng)] : [],
               value: fareWei,
             }}
-            onDone={() => setTimeout(rides.refetch, 1500)}
+            onDone={refetch}
           />
-        </p>
-        <small className="muted">The fare is held in escrow by the contract until you confirm or cancel.</small>
+          <small className="muted">The fare is held in escrow by the contract until you confirm or cancel.</small>
+        </aside>
       </section>
 
       <section>
-        <h2>My rides</h2>
-        {mine.length === 0 && <p className="muted">No rides yet.</p>}
-        {[...mine].reverse().map((r) => (
-          <RideRow key={r.id} ride={r} onChange={() => setTimeout(rides.refetch, 1500)} />
+        <h2>Past rides</h2>
+        {past.length === 0 && <p className="muted">No past rides yet.</p>}
+        {past.map((r) => (
+          <div key={r.id} className="card">
+            <span>
+              <strong>#{r.id}</strong> <span className={`status-pill ${r.status}`}>{r.status}</span> · {eth(r.fare)}
+              {r.driver && (
+                <> · driver <span className="mono">{short(r.driver)}</span> <RepBadge address={r.driver} role="driver" /></>
+              )}
+            </span>
+            {r.status === "Completed" && <RateControl rideId={r.id} who="driver" />}
+          </div>
         ))}
       </section>
-    </>
+    </div>
   );
 }
 
-function RideRow({ ride, onChange }: { ride: RideView; onChange: () => void }) {
+function CurrentRide({ ride, onChange }: { ride: RideView; onChange: () => void }) {
   return (
-    <div className="card">
-      <span>
-        <strong>#{ride.id}</strong> {ride.status} · {eth(ride.fare)}
+    <div className="panel">
+      <div className="row" style={{ display: "flex", justifyContent: "space-between" }}>
+        <strong>Ride #{ride.id} · {eth(ride.fare)}</strong>
         {ride.driver && (
-          <>
-            {" "}· driver <span className="mono">{short(ride.driver)}</span> <RepBadge address={ride.driver} role="driver" />
-          </>
+          <span>driver <span className="mono">{short(ride.driver)}</span> <RepBadge address={ride.driver} role="driver" /></span>
         )}
-      </span>
+      </div>
+      <RideTracker status={ride.status} who="rider" />
       <span className="row">
+        {ride.status === "Accepted" && (
+          <TxButton
+            label="Confirm completed"
+            request={{ address: addresses.rideServices, abi: rideAbi, functionName: "completeRide", args: [BigInt(ride.id)] }}
+            onDone={onChange}
+          />
+        )}
         {(ride.status === "Requested" || ride.status === "Accepted") && (
           <TxButton
             label="Cancel (full refund)"
             className="ghost"
             request={{ address: addresses.rideServices, abi: rideAbi, functionName: "cancelRide", args: [BigInt(ride.id)] }}
-            onDone={onChange}
-          />
-        )}
-        {ride.status === "Accepted" && (
-          <TxButton
-            label="Confirm completed"
-            request={{ address: addresses.rideServices, abi: rideAbi, functionName: "completeRide", args: [BigInt(ride.id)] }}
             onDone={onChange}
           />
         )}
