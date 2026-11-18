@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
-import { useWaitForTransactionReceipt, useWriteContract } from "wagmi";
+import { useEffect, useState } from "react";
+import { useConfig, useConnection, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
+import { simulateContract } from "wagmi/actions";
 import { CHAIN_ID, type TxRequest } from "@/lib/contracts";
 import { friendlyError } from "@/lib/errors";
 
-/** Sends a contract write and shows wallet-pending, confirming, confirmed or a readable error. */
+/** Simulates, then sends a contract write and shows wallet-pending, confirming, confirmed or a readable error. */
 export function TxButton({
   label,
   request,
@@ -19,39 +20,65 @@ export function TxButton({
   disabled?: boolean;
   className?: string;
 }) {
+  const config = useConfig();
+  const { address } = useConnection();
   const write = useWriteContract();
-  const receipt = useWaitForTransactionReceipt({ hash: write.data, chainId: CHAIN_ID });
+  // retry: false: wagmi throws on a reverted receipt, and the default three retries kept "Pending…" up for ~10 s.
+  const receipt = useWaitForTransactionReceipt({ hash: write.data, chainId: CHAIN_ID, query: { retry: false } });
+  const [checking, setChecking] = useState(false);
+  // Tagged with the sender so a switch of account hides it (no setState in the reset effect below).
+  const [preflight, setPreflight] = useState<{ error: unknown; from?: string }>();
+
+  // A status or error belongs to the account that sent it: clear it when the wallet switches account.
+  useEffect(() => {
+    write.reset();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [address]);
 
   useEffect(() => {
     if (receipt.isSuccess) onDone?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [receipt.isSuccess]);
 
-  const busy = write.isPending || (!!write.data && receipt.isLoading);
-  const status = write.isPending
-    ? "Confirm in wallet…"
-    : receipt.isLoading
-      ? "Pending…"
-      : receipt.isSuccess
-        ? "Confirmed"
-        : receipt.isError
-          ? "Failed on chain"
-          : "";
+  async function send() {
+    write.reset();
+    setPreflight(undefined);
+    setChecking(true);
+    try {
+      // Simulate first: a call that would revert (e.g. ClaimTooEarly) shows its readable reason here instead of
+      // the wallet broadcasting a doomed transaction and charging gas for it.
+      await simulateContract(config, { ...request, account: address, chainId: CHAIN_ID } as never);
+    } catch (e) {
+      setPreflight({ error: e, from: address });
+      return;
+    } finally {
+      setChecking(false);
+    }
+    write.mutate({ ...request, chainId: CHAIN_ID } as never);
+  }
+
+  const busy = checking || write.isPending || (!!write.data && receipt.isLoading);
+  const status = checking
+    ? "Checking…"
+    : write.isPending
+      ? "Confirm in wallet…"
+      : receipt.isLoading
+        ? "Pending…"
+        : receipt.isSuccess
+          ? "Confirmed"
+          : receipt.isError
+            ? "Failed on chain"
+            : "";
+  const preflightError = preflight && preflight.from === address ? preflight.error : undefined;
+  const error = preflightError ?? write.error ?? receipt.error;
 
   return (
     <span className="tx">
-      <button
-        className={className}
-        disabled={disabled || busy}
-        onClick={() => {
-          write.reset();
-          write.mutate({ ...request, chainId: CHAIN_ID } as never);
-        }}
-      >
+      <button className={className} disabled={disabled || busy} onClick={send}>
         {label}
       </button>
       {status && <small className={receipt.isSuccess ? "ok" : "muted"}>{status}</small>}
-      {write.error && <small className="err">{friendlyError(write.error)}</small>}
+      {error && <small className="err">{friendlyError(error)}</small>}
     </span>
   );
 }

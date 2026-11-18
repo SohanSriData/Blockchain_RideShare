@@ -1,4 +1,4 @@
-import { createConfig, http } from "wagmi";
+import { cookieStorage, createConfig, createStorage, http } from "wagmi";
 import { injected } from "wagmi/connectors";
 import { anvil } from "viem/chains";
 
@@ -12,4 +12,7 @@ export const config = createConfig({
   connectors: [injected({ shimDisconnect: false })],
   transports: { [anvil.id]: http(rpc) },
   ssr: true,
+  // The connection lives in a cookie so the server render (app/layout.tsx) starts in "reconnecting" for a returning
+  // user. With the default localStorage the first render was "disconnected" and flashed "Connect wallet".
+  storage: createStorage({ storage: cookieStorage }),
 });

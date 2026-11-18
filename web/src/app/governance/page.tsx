@@ -159,7 +159,7 @@ function NewProposal({ disabled, onDone }: { disabled: boolean; onDone: () => vo
 function Deposit({ onDone }: { onDone: () => void }) {
   const [amount, setAmount] = useState("");
   const send = useSendTransaction();
-  const receipt = useWaitForTransactionReceipt({ hash: send.data });
+  const receipt = useWaitForTransactionReceipt({ hash: send.data, chainId: CHAIN_ID });
   let wei: bigint | undefined;
   try {
     wei = amount ? parseEther(amount) : undefined;
@@ -172,7 +172,7 @@ function Deposit({ onDone }: { onDone: () => void }) {
       <button
         className="ghost"
         disabled={!wei || send.isPending}
-        onClick={() => send.mutate({ to: addresses.governance, value: wei }, { onSuccess: () => setTimeout(onDone, 1500) })}
+        onClick={() => send.mutate({ to: addresses.governance, value: wei, chainId: CHAIN_ID },{ onSuccess: () => setTimeout(onDone, 1500) })}
       >
         Donate to treasury
       </button>

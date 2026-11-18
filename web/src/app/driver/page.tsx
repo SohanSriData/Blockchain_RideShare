@@ -60,7 +60,9 @@ export default function DriverPage() {
         {member.data ? (
           <p className="row">
             <span className="ok">You are a staked member.</span>
+            {/* Distinct keys: otherwise React reuses the Join button's instance and its Pending/Confirmed state. */}
             <TxButton
+              key="exit"
               label="Leave and recover stake"
               className="ghost"
               request={{ address: addresses.membership, abi: membershipAbi, functionName: "exit" }}
@@ -71,6 +73,7 @@ export default function DriverPage() {
           <p className="row">
             <span>Joining costs exactly {stake.data !== undefined ? eth(stake.data) : "…"} (fully refundable).</span>
             <TxButton
+              key="join"
               label="Join the co-op"
               disabled={!isConnected || stake.data === undefined}
               request={{ address: addresses.membership, abi: membershipAbi, functionName: "join", value: stake.data }}

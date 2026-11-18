@@ -6,11 +6,20 @@ import { CHAIN_ID } from "@/lib/contracts";
 import { short } from "@/lib/format";
 
 export function ConnectButton() {
-  const { address, isConnected, chainId } = useConnection();
+  const { address, isConnected, chainId, status } = useConnection();
   const connect = useConnect();
   const disconnect = useDisconnect();
   const switchChain = useSwitchChain();
   const [noWallet, setNoWallet] = useState(false);
+  // A returning user starts in "reconnecting" (cookie-backed initial state, see lib/wagmi.ts). Showing "Connect wallet"
+  // then flashed a clickable button that started a second connect before the reconnect finished.
+  if (status === "reconnecting") {
+    return (
+      <span className="row">
+        <button disabled>Wallet…</button>
+      </span>
+    );
+  }
 
   if (!isConnected) {
     const onClick = () => {

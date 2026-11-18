@@ -97,6 +97,7 @@ Runs the entire flow against a real temporary chain, cross-checks the chain and 
 | Symptom | Fix |
 |---|---|
 | Wallet shows the wrong network or "chain mismatch" | Switch MetaMask to chain 31337 |
+| Switching account in MetaMask does not change the address in the app | MetaMask only exposes accounts connected to the site: open its site-connection menu on localhost:3000, Edit accounts, and tick Rider, Driver and Member 3 once before the demo |
 | Transactions hang or nonce errors after restarting Anvil | Re-run `npm run deploy:local`, restart the indexer, then in MetaMask: Settings, Advanced, Clear activity tab data |
 | App shows no rides | Check the indexer terminal is running and `http://127.0.0.1:8787/health` responds |
 | "Claim too early" | Anvil's clock can run ahead of the wall clock; wait a little and retry |
