@@ -2,14 +2,14 @@
 
 import { useState } from "react";
 import { useConnection, useReadContract } from "wagmi";
-import { addresses, reputationAbi } from "@/lib/contracts";
+import { addresses, CHAIN_ID, reputationAbi } from "@/lib/contracts";
 import { TxButton } from "./TxButton";
 
 /** 1-5 rating for a completed ride, once per rater. */
 export function RateControl({ rideId, who }: { rideId: string; who: "driver" | "rider" }) {
   const { address } = useConnection();
   const [score, setScore] = useState(5);
-  const rated = useReadContract({
+  const rated = useReadContract({ chainId: CHAIN_ID,
     address: addresses.reputation,
     abi: reputationAbi,
     functionName: "hasRated",

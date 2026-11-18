@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useWaitForTransactionReceipt, useWriteContract } from "wagmi";
-import type { TxRequest } from "@/lib/contracts";
+import { CHAIN_ID, type TxRequest } from "@/lib/contracts";
 import { friendlyError } from "@/lib/errors";
 
 /** Sends a contract write and shows wallet-pending, confirming, confirmed or a readable error. */
@@ -20,7 +20,7 @@ export function TxButton({
   className?: string;
 }) {
   const write = useWriteContract();
-  const receipt = useWaitForTransactionReceipt({ hash: write.data });
+  const receipt = useWaitForTransactionReceipt({ hash: write.data, chainId: CHAIN_ID });
 
   useEffect(() => {
     if (receipt.isSuccess) onDone?.();
@@ -45,7 +45,7 @@ export function TxButton({
         disabled={disabled || busy}
         onClick={() => {
           write.reset();
-          write.mutate(request as never);
+          write.mutate({ ...request, chainId: CHAIN_ID } as never);
         }}
       >
         {label}

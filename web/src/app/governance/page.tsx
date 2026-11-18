@@ -4,13 +4,13 @@ import { useState } from "react";
 import { useConnection, useReadContract, useSendTransaction, useWaitForTransactionReceipt } from "wagmi";
 import { isAddress, parseEther } from "viem";
 import { TxButton } from "@/components/TxButton";
-import { addresses, governanceAbi, membershipAbi, PROPOSAL_KINDS } from "@/lib/contracts";
+import { addresses, CHAIN_ID, governanceAbi, membershipAbi, PROPOSAL_KINDS } from "@/lib/contracts";
 import { friendlyError } from "@/lib/errors";
 import { eth, short } from "@/lib/format";
 import { useIndexer, type ProposalView, type TreasuryView } from "@/lib/indexer";
 
 const read = (functionName: "feePercent" | "FEE_CAP_PERCENT" | "perKmRate" | "minFare" | "claimTimeout" | "treasuryBalance") =>
-  ({ address: addresses.governance, abi: governanceAbi, functionName, query: { refetchInterval: 3000 } }) as const;
+  ({ chainId: CHAIN_ID, address: addresses.governance, abi: governanceAbi, functionName, query: { refetchInterval: 3000 } }) as const;
 
 export default function GovernancePage() {
   const { address, isConnected } = useConnection();
@@ -20,7 +20,7 @@ export default function GovernancePage() {
   const minFare = useReadContract(read("minFare"));
   const timeout = useReadContract(read("claimTimeout"));
   const balance = useReadContract(read("treasuryBalance"));
-  const member = useReadContract({
+  const member = useReadContract({ chainId: CHAIN_ID,
     address: addresses.membership,
     abi: membershipAbi,
     functionName: "isMember",
@@ -89,7 +89,7 @@ function describe(p: ProposalView): string {
 
 function ProposalCard({ p, canVote, onDone }: { p: ProposalView; canVote: boolean; onDone: () => void }) {
   const { address } = useConnection();
-  const voted = useReadContract({
+  const voted = useReadContract({ chainId: CHAIN_ID,
     address: addresses.governance,
     abi: governanceAbi,
     functionName: "hasVoted",

@@ -6,7 +6,7 @@ import { useConnection, useReadContract } from "wagmi";
 import { TxButton } from "@/components/TxButton";
 import { RateControl } from "@/components/RateControl";
 import { RepBadge } from "@/components/RepBadge";
-import { addresses, membershipAbi, rideAbi } from "@/lib/contracts";
+import { addresses, CHAIN_ID, membershipAbi, rideAbi } from "@/lib/contracts";
 import { eth, sameAddress, short } from "@/lib/format";
 import { fromMilliDegrees, sortByDistance, type LatLng } from "@/lib/geo";
 import { useIndexer, type RideView } from "@/lib/indexer";
@@ -19,8 +19,8 @@ export default function DriverPage() {
   const [here, setHere] = useState<LatLng>(HYDERABAD);
   const [selected, setSelected] = useState<string>();
 
-  const stake = useReadContract({ address: addresses.membership, abi: membershipAbi, functionName: "STAKE" });
-  const member = useReadContract({
+  const stake = useReadContract({ chainId: CHAIN_ID, address: addresses.membership, abi: membershipAbi, functionName: "STAKE" });
+  const member = useReadContract({ chainId: CHAIN_ID,
     address: addresses.membership,
     abi: membershipAbi,
     functionName: "isMember",
@@ -129,7 +129,7 @@ export default function DriverPage() {
 }
 
 function ClaimButton({ id, onDone }: { id: string; onDone: () => void }) {
-  const ride = useReadContract({
+  const ride = useReadContract({ chainId: CHAIN_ID,
     address: addresses.rideServices,
     abi: rideAbi,
     functionName: "getRide",

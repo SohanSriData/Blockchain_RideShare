@@ -7,7 +7,7 @@ import { formatEther, parseEther } from "viem";
 import { TxButton } from "@/components/TxButton";
 import { RateControl } from "@/components/RateControl";
 import { RepBadge } from "@/components/RepBadge";
-import { addresses, governanceAbi, rideAbi } from "@/lib/contracts";
+import { addresses, CHAIN_ID, governanceAbi, rideAbi } from "@/lib/contracts";
 import { eth, sameAddress, short } from "@/lib/format";
 import { haversineKm, suggestFare, toMicroDegrees, type LatLng } from "@/lib/geo";
 import { useIndexer, type RideView } from "@/lib/indexer";
@@ -29,8 +29,8 @@ export default function RiderPage() {
   const [route, setRoute] = useState<{ distanceKm: number; source: string }>();
   const [fareEdit, setFareEdit] = useState<string | null>(null);
 
-  const rate = useReadContract({ address: addresses.governance, abi: governanceAbi, functionName: "perKmRate", query: { refetchInterval: 5000 } });
-  const minFare = useReadContract({ address: addresses.governance, abi: governanceAbi, functionName: "minFare", query: { refetchInterval: 5000 } });
+  const rate = useReadContract({ chainId: CHAIN_ID, address: addresses.governance, abi: governanceAbi, functionName: "perKmRate", query: { refetchInterval: 5000 } });
+  const minFare = useReadContract({ chainId: CHAIN_ID, address: addresses.governance, abi: governanceAbi, functionName: "minFare", query: { refetchInterval: 5000 } });
   const rides = useIndexer<RideView[]>(address ? `/history/${address}` : null);
 
   // Route distance (server route: ORS with straight-line fallback)
