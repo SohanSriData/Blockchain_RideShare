@@ -26,4 +26,4 @@ A demo run in Chrome with real MetaMask exposed problems that unit tests and `np
 
 - Fewer surprises during a live demo: no doomed transactions, no picker loop, no flashes.
 - One extra `eth_call` per click (the simulation).
-- These behaviours are verified by the manual browser run recorded in `docs/PROJECT_REPORT.md` §5, not by automated tests; re-run the `docs/DEMO.md` script after changing wallet or transaction code.
+- These behaviours are verified by the manual browser run recorded in `docs/PROJECT_REPORT.md` §17, not by automated tests; re-run the `docs/DEMO.md` script after changing wallet or transaction code.

@@ -36,7 +36,7 @@ Follow `README.md` (Setup, then Everyday commands). Windows notes:
 |---|---|
 | Four contracts | Done. 81 Foundry tests, 98-100% line coverage per contract |
 | Indexer | Done. 21 tests including reorg/wipe recovery |
-| Web app | Done. Rider booking screen, driver dashboard, governance; 7 unit tests; `next build` passes; full demo run with real MetaMask (see PROJECT_REPORT §5) |
+| Web app | Done. Rider booking screen, driver dashboard, governance; 7 unit tests; `next build` passes; full demo run with real MetaMask (see PROJECT_REPORT §17) |
 | End-to-end script | Done. `npm run e2e` |
 | Static analysis (Slither) | Done. No high or medium findings; triage in ADR 0003 |
 | Sepolia deployment | **Not done** (optional) |
