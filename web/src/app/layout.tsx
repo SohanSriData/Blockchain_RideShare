@@ -5,7 +5,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { SiteHeader } from "@/components/SiteHeader";
-import { config } from "@/lib/wagmi";
+import { getConfig } from "@/lib/wagmi";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
-  const initialState = cookieToInitialState(config, (await headers()).get("cookie"));
+  const initialState = cookieToInitialState(getConfig(), (await headers()).get("cookie"));
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body>

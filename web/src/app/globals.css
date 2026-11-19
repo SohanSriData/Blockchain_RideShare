@@ -73,6 +73,7 @@ label input { color: var(--fg); font-size: 1rem; }
 /* Surfaces */
 .panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
 .panel + .panel { margin-top: 12px; }
+.stats > .panel, .split > .panel, .split-even > .panel, .choices > .panel { margin-top: 0; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; }
 .card.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 .notice { padding: 10px 14px; border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 8px; margin: 0 0 16px; background: var(--surface); }
@@ -110,7 +111,7 @@ label input { color: var(--fg); font-size: 1rem; }
 .tracker .step.done, .tracker .step.current { color: var(--fg); font-weight: 600; }
 .tracker .bar { flex: 1; height: 2px; background: var(--line); margin-bottom: 20px; min-width: 16px; }
 .tracker .bar.done { background: var(--accent); }
-.tracker.cancelled .bubble { border-color: var(--err); }
+.tracker.cancelled .step.current .bubble { border-color: var(--err); color: var(--err); }
 .tracker-hint { font-size: 0.9rem; color: var(--muted); margin: 0 0 8px; }
 .status-pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 0.8rem; background: var(--accent-soft); color: var(--accent); font-weight: 600; }
 .status-pill.Cancelled { background: var(--err-soft); color: var(--err); }

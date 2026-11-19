@@ -26,7 +26,8 @@ export function RideTracker({ status, who }: { status: RideView["status"]; who: 
     <div>
       <div className={`tracker${cancelled ? " cancelled" : ""}`} aria-label={`Ride status: ${status}`}>
         {STEPS.map((label, i) => {
-          const done = !cancelled && (i < reached || (i === reached && status === "Completed"));
+          // A cancelled ride was still requested, so step 1 stays ticked; the Cancelled step is the current one.
+          const done = cancelled ? i < reached : i < reached || (i === reached && status === "Completed");
           const current = i === reached && !done;
           const text = cancelled && i === reached ? "Cancelled" : label;
           return (
